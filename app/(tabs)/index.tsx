@@ -1,98 +1,186 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import * as ImagePicker from "expo-image-picker";
+import * as Sharing from "expo-sharing";
+import { useRef, useState } from "react";
+import {
+  Button,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { captureRef } from "react-native-view-shot";
+import OverlayItem from "../../components/OverlayItem";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const screenWidth = Dimensions.get("window").width;
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [overlays, setOverlays] = useState<Array<{ id: string; source: any }>>(
+    []
+  );
+  const [textOverlays, setTextOverlays] = useState<
+    Array<{ id: string; text: string }>
+  >([]);
+  const [newText, setNewText] = useState("");
+  const memeRef = useRef<View>(null);
+  // Inside /app/(tabs)/index.tsx, near the top
+  const overlayOptions = [
+    {
+      id: "santa-hat",
+      label: "Santa Hat",
+      source: require("../../assets/overlays/santa-hat.png"),
+    },
+    {
+      id: "santa-beard",
+      label: "Santa Beard",
+      source: require("../../assets/overlays/santa-beard.png"),
+    },
+    {
+      id: "snowflake",
+      label: "Snowflake",
+      source: require("../../assets/overlays/snowflake.png"),
+    },
+    {
+      id: "christmas-lights",
+      label: "Christmas Lights",
+      source: require("../../assets/overlays/christmas-lights.png"),
+    },
+    {
+      id: "christmas-tree",
+      label: "Christmas Tree",
+      source: require("../../assets/overlays/christmas-tree.png"),
+    },
+    {
+      id: "gift-box",
+      label: "Gift Box",
+      source: require("../../assets/overlays/gift-box.png"),
+    },
+  ];
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled) setImageUri(result.assets[0].uri);
+  };
+
+  const addOverlay = (source: any) => {
+    setOverlays([...overlays, { id: Date.now().toString(), source }]);
+  };
+
+  const addTextOverlay = () => {
+    if (!newText.trim()) return;
+    setTextOverlays([
+      ...textOverlays,
+      { id: Date.now().toString(), text: newText },
+    ]);
+    setNewText("");
+  };
+
+  const exportMeme = async () => {
+    if (memeRef.current) {
+      const uri = await captureRef(memeRef, { format: "png", quality: 1 });
+      await Sharing.shareAsync(uri);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Canvas */}
+      <View ref={memeRef} style={styles.canvas}>
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
+        {overlays.map((overlay) => (
+          <OverlayItem
+            key={overlay.id}
+            source={overlay.source}
+            initialWidth={80}
+            initialHeight={80}
+          />
+        ))}
+        {textOverlays.map((txt, i) => (
+          <Text key={txt.id} style={[styles.textOverlay, { top: 10 + i * 30 }]}>
+            {txt.text}
+          </Text>
+        ))}
+      </View>
+
+      {/* Controls */}
+      <View style={styles.controls}>
+        <Button title="Pick Base Image" onPress={pickImage} />
+
+        <ScrollView
+          horizontal
+          style={styles.overlayScroll}
+          contentContainerStyle={{ paddingHorizontal: 10 }}
+        >
+          {overlayOptions.map((overlay) => (
+            <Button
+              key={overlay.id}
+              title={overlay.label}
+              onPress={() => addOverlay(overlay.source)}
+            />
+          ))}
+        </ScrollView>
+
+        <TextInput
+          value={newText}
+          onChangeText={setNewText}
+          placeholder="Enter text"
+          style={styles.textInput}
+        />
+        <Button title="Add Text" onPress={addTextOverlay} />
+
+        <TouchableOpacity style={styles.exportButton} onPress={exportMeme}>
+          <Text style={styles.exportButtonText}>Export Meme</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { flex: 1, backgroundColor: "#fff" },
+  canvas: {
+    flex: 1,
+    width: screenWidth,
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  image: { width: 300, height: 300 },
+  textOverlay: {
+    position: "absolute",
+    color: "black",
+    fontSize: 20,
+    fontWeight: "bold",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  controls: {
+    padding: 10,
+    backgroundColor: "#f9f9f9",
   },
+  overlayScroll: { marginVertical: 10 },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    backgroundColor: "#fff",
+    color: "#000",
+    padding: 8,
+    borderRadius: 5,
+    marginBottom: 10,
+    width: "100%",
+  },
+  exportButton: {
+    backgroundColor: "red",
+    padding: 12,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  exportButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

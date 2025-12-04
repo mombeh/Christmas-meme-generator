@@ -1,6 +1,9 @@
-import { StyleSheet } from 'react-native';
-import { PanGestureHandler, PinchGestureHandler, RotationGestureHandler } from 'react-native-gesture-handler';
-import Animated, { useAnimatedGestureHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { Image, StyleSheet } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue
+} from "react-native-reanimated";
 
 export default function OverlayItem({ source, initialWidth = 100, initialHeight = 100 }) {
   const translateX = useSharedValue(0);
@@ -8,50 +11,52 @@ export default function OverlayItem({ source, initialWidth = 100, initialHeight 
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
 
-  const panGesture = useAnimatedGestureHandler({
-    onStart: (_, ctx) => { ctx.startX = translateX.value; ctx.startY = translateY.value; },
-    onActive: (event, ctx) => {
-      translateX.value = ctx.startX + event.translationX;
-      translateY.value = ctx.startY + event.translationY;
-    }
-  });
+  // PAN (move)
+  const pan = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = e.translationX;
+      translateY.value = e.translationY;
+    });
 
-  const pinchGesture = useAnimatedGestureHandler({
-    onActive: (event) => { scale.value = event.scale; }
-  });
+  // PINCH (scale)
+  const pinch = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = e.scale;
+    });
 
-  const rotationGesture = useAnimatedGestureHandler({
-    onActive: (event) => { rotation.value = event.rotation; }
-  });
+  // ROTATION
+  const rotate = Gesture.Rotation()
+    .onUpdate((e) => {
+      rotation.value = e.rotation;
+    });
+
+  // COMBINE GESTURES
+  const composed = Gesture.Simultaneous(pan, pinch, rotate);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
       { scale: scale.value },
-      { rotateZ: `${rotation.value}rad` }
-    ]
+      { rotateZ: `${rotation.value}rad` },
+    ],
   }));
 
   return (
-    <PanGestureHandler onGestureEvent={panGesture}>
+    <GestureDetector gesture={composed}>
       <Animated.View style={[styles.overlay, animatedStyle]}>
-        <RotationGestureHandler onGestureEvent={rotationGesture}>
-          <Animated.View>
-            <PinchGestureHandler onGestureEvent={pinchGesture}>
-              <Animated.Image source={source} style={{ width: initialWidth, height: initialHeight }} />
-            </PinchGestureHandler>
-          </Animated.View>
-        </RotationGestureHandler>
+        <Image
+          source={source}
+          style={{ width: initialWidth, height: initialHeight }}
+          resizeMode="contain"
+        />
       </Animated.View>
-    </PanGestureHandler>
+    </GestureDetector>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
+    position: "absolute",
   },
 });

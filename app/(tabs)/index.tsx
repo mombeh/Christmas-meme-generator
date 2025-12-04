@@ -8,12 +8,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { captureRef } from "react-native-view-shot";
 import OverlayItem from "../../components/OverlayItem";
+import TextOverlay from "../../components/TextOverlay";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -128,12 +128,14 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        <TextInput
-          value={newText}
-          onChangeText={setNewText}
-          placeholder="Enter text"
-          style={styles.textInput}
-        />
+        {textOverlays.map((txt) => (
+          <TextOverlay
+            key={txt.id}
+            text={txt.text}
+            fontSize={20}
+            color="black"
+          />
+        ))}
         <Button title="Add Text" onPress={addTextOverlay} />
 
         <TouchableOpacity style={styles.exportButton} onPress={exportMeme}>

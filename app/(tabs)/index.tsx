@@ -114,6 +114,9 @@ export default function HomeScreen() {
               source={overlay.source}
               initialWidth={120}
               initialHeight={120}
+              onDelete={() =>
+                setOverlays(overlays.filter((o) => o.id !== overlay.id))
+              }
             />
           ))}
 

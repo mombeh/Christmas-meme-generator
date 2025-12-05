@@ -1,8 +1,9 @@
 import * as ImagePicker from "expo-image-picker";
 import * as Sharing from "expo-sharing";
 import { useRef, useState } from "react";
+import { Modal, TextInput } from "react-native";
+
 import {
-  Button,
   Dimensions,
   Image,
   ScrollView,
@@ -14,6 +15,7 @@ import {
 import { captureRef } from "react-native-view-shot";
 import OverlayItem from "../../components/OverlayItem";
 import TextOverlay from "../../components/TextOverlay";
+import ZoomableImage from "../../components/ZoomableImage";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -22,41 +24,44 @@ export default function HomeScreen() {
   const [overlays, setOverlays] = useState<Array<{ id: string; source: any }>>(
     []
   );
+  const [showTextModal, setShowTextModal] = useState(false);
+  const [tempText, setTempText] = useState("");
+
   const [textOverlays, setTextOverlays] = useState<
     Array<{ id: string; text: string }>
   >([]);
-  const [newText, setNewText] = useState("");
+
   const memeRef = useRef<View>(null);
-  // Inside /app/(tabs)/index.tsx, near the top
+
   const overlayOptions = [
     {
-      id: "santa-hat",
-      label: "Santa Hat",
+      id: "hat",
+      label: "Hat",
       source: require("../../assets/overlays/santa-hat.png"),
     },
     {
-      id: "santa-beard",
-      label: "Santa Beard",
+      id: "beard",
+      label: "Beard",
       source: require("../../assets/overlays/santa-beard.png"),
     },
     {
-      id: "snowflake",
-      label: "Snowflake",
+      id: "snow",
+      label: "Snow",
       source: require("../../assets/overlays/snowflake.png"),
     },
     {
-      id: "christmas-lights",
-      label: "Christmas Lights",
+      id: "lights",
+      label: "Lights",
       source: require("../../assets/overlays/christmas-lights.png"),
     },
     {
-      id: "christmas-tree",
-      label: "Christmas Tree",
+      id: "tree",
+      label: "Tree",
       source: require("../../assets/overlays/christmas-tree.png"),
     },
     {
-      id: "gift-box",
-      label: "Gift Box",
+      id: "gift",
+      label: "Gift",
       source: require("../../assets/overlays/gift-box.png"),
     },
   ];
@@ -74,13 +79,11 @@ export default function HomeScreen() {
     setOverlays([...overlays, { id: Date.now().toString(), source }]);
   };
 
-  const addTextOverlay = () => {
-    if (!newText.trim()) return;
+  const addText = () => {
     setTextOverlays([
       ...textOverlays,
-      { id: Date.now().toString(), text: newText },
+      { id: Date.now().toString(), text: "Merry Christmas!" },
     ]);
-    setNewText("");
   };
 
   const exportMeme = async () => {
@@ -91,98 +94,235 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Canvas */}
-      <View ref={memeRef} style={styles.canvas}>
-        {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
-        {overlays.map((overlay) => (
-          <OverlayItem
-            key={overlay.id}
-            source={overlay.source}
-            initialWidth={80}
-            initialHeight={80}
-          />
-        ))}
-        {textOverlays.map((txt, i) => (
-          <Text key={txt.id} style={[styles.textOverlay, { top: 10 + i * 30 }]}>
-            {txt.text}
-          </Text>
-        ))}
-      </View>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: "#8A0000" }}
+      contentContainerStyle={{ paddingBottom: 50 }}
+    >
+      <View style={styles.container}>
+        <Text style={styles.title}>Christmas Meme{"\n"}Generator</Text>
 
-      {/* Controls */}
-      <View style={styles.controls}>
-        <Button title="Pick Base Image" onPress={pickImage} />
+        <View ref={memeRef} style={styles.imageBox}>
+          {imageUri ? (
+            <ZoomableImage source={{ uri: imageUri }} />
+          ) : (
+            <Text style={{ color: "gray" }}>Pick an image…</Text>
+          )}
 
-        <ScrollView
-          horizontal
-          style={styles.overlayScroll}
-          contentContainerStyle={{ paddingHorizontal: 10 }}
-        >
-          {overlayOptions.map((overlay) => (
-            <Button
+          {overlays.map((overlay) => (
+            <OverlayItem
               key={overlay.id}
-              title={overlay.label}
-              onPress={() => addOverlay(overlay.source)}
+              source={overlay.source}
+              initialWidth={120}
+              initialHeight={120}
             />
           ))}
-        </ScrollView>
 
-        {textOverlays.map((txt) => (
-          <TextOverlay
-            key={txt.id}
-            text={txt.text}
-            fontSize={20}
-            color="black"
+          {textOverlays.map((txt) => (
+            <TextOverlay
+              key={txt.id}
+              text={txt.text}
+              fontSize={28}
+              color="white"
+            />
+          ))}
+        </View>
+
+        {/* Buttons */}
+        <TouchableOpacity style={styles.goldButton} onPress={pickImage}>
+          <Text style={styles.goldButtonText}>PICK IMAGE</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.goldButton}
+          onPress={() => setShowTextModal(true)}
+        >
+          <Text style={styles.goldButtonText}>ADD TEXT</Text>
+        </TouchableOpacity>
+        {/* Overlay selector bar */}
+       {/* Overlay selector bar */}
+<View style={styles.overlayBar}>
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={{ paddingHorizontal: 10 }}
+  >
+    {overlayOptions.map((item) => (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.overlayButton}
+        onPress={() => addOverlay(item.source)}
+      >
+        <View
+          style={{
+            width: 60,
+            height: 60,
+            backgroundColor: "#FFF5E6",
+            borderRadius: 12,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Image
+            source={item.source}
+            style={{ width: 50, height: 50, resizeMode: "contain" }}
           />
-        ))}
-        <Button title="Add Text" onPress={addTextOverlay} />
+        </View>
+
+        <Text style={styles.overlayLabel}>{item.label}</Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+</View>
+
+        {/* Text Input Modal */}
+        <Modal visible={showTextModal} transparent animationType="fade">
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                width: "80%",
+                backgroundColor: "#fff",
+                padding: 20,
+                borderRadius: 12,
+              }}
+            >
+              <Text
+                style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
+              >
+                Enter Text
+              </Text>
+
+              <TextInput
+                value={tempText}
+                onChangeText={setTempText}
+                placeholder="Type something…"
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 10,
+                  padding: 10,
+                  marginBottom: 20,
+                }}
+              />
+
+              <TouchableOpacity
+                style={{
+                  backgroundColor: "#8A0000",
+                  padding: 12,
+                  borderRadius: 10,
+                }}
+                onPress={() => {
+                  if (tempText.trim() !== "") {
+                    setTextOverlays([
+                      ...textOverlays,
+                      { id: Date.now().toString(), text: tempText },
+                    ]);
+                  }
+                  setTempText("");
+                  setShowTextModal(false);
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#fff",
+                    textAlign: "center",
+                    fontWeight: "bold",
+                  }}
+                >
+                  ADD TEXT
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         <TouchableOpacity style={styles.exportButton} onPress={exportMeme}>
-          <Text style={styles.exportButtonText}>Export Meme</Text>
+          <Text style={styles.exportText}>EXPORT</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  canvas: {
+  container: {
     flex: 1,
-    width: screenWidth,
-    backgroundColor: "#eee",
+    backgroundColor: "#8A0000", // Christmas red background
+    alignItems: "center",
+    paddingTop: 50,
+    paddingHorizontal: 20,
+  },
+
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    textAlign: "left",
+    width: "85%",
+    color: "#fff",
+    marginBottom: 20,
+  },
+
+  imageBox: {
+    width: "85%",
+    height: 350,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 20,
   },
-  image: { width: 300, height: 300 },
-  textOverlay: {
-    position: "absolute",
-    color: "black",
-    fontSize: 20,
+
+  goldButton: {
+    width: "85%",
+    padding: 15,
+    backgroundColor: "#F1D08A",
+    borderRadius: 12,
+    marginVertical: 6,
+  },
+
+  goldButtonText: {
+    textAlign: "center",
     fontWeight: "bold",
+    fontSize: 18,
+    color: "#8A0000",
   },
-  controls: {
-    padding: 10,
-    backgroundColor: "#f9f9f9",
-  },
-  overlayScroll: { marginVertical: 10 },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    backgroundColor: "#fff",
-    color: "#000",
-    padding: 8,
-    borderRadius: 5,
-    marginBottom: 10,
-    width: "100%",
-  },
+
   exportButton: {
-    backgroundColor: "red",
-    padding: 12,
-    borderRadius: 5,
-    marginTop: 10,
-    alignItems: "center",
+    width: "85%",
+    padding: 15,
+    backgroundColor: "#FFF5E6",
+    borderRadius: 12,
+    marginTop: 15,
   },
-  exportButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+
+  exportText: {
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 18,
+    color: "#8A0000",
+  },
+
+  overlayBar: {
+    width: "100%",
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+
+  overlayButton: {
+    alignItems: "center",
+    marginHorizontal: 10,
+  },
+
+  overlayLabel: {
+    color: "#fff",
+    fontSize: 12,
+    marginTop: 4,
+  },
 });

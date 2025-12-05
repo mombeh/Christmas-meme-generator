@@ -1,8 +1,8 @@
 import { Image, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue
+  useAnimatedStyle,
+  useSharedValue
 } from "react-native-reanimated";
 
 export default function OverlayItem({ source, initialWidth = 100, initialHeight = 100 }) {
@@ -11,23 +11,37 @@ export default function OverlayItem({ source, initialWidth = 100, initialHeight 
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
 
-  // PAN (move)
-  const pan = Gesture.Pan()
+  const lastX = useSharedValue(0);
+  const lastY = useSharedValue(0);
+  const lastScale = useSharedValue(1);
+  const lastRotation = useSharedValue(0);
+
+ const pan = Gesture.Pan()
     .onUpdate((e) => {
-      translateX.value = e.translationX;
-      translateY.value = e.translationY;
+      translateX.value = lastX.value + e.translationX;
+      translateY.value = lastY.value + e.translationY;
+    })
+    .onEnd(() => {
+      lastX.value = translateX.value;
+      lastY.value = translateY.value;
     });
 
-  // PINCH (scale)
+  // PINCH
   const pinch = Gesture.Pinch()
     .onUpdate((e) => {
-      scale.value = e.scale;
+      scale.value = lastScale.value * e.scale;
+    })
+    .onEnd(() => {
+      lastScale.value = scale.value;
     });
 
   // ROTATION
   const rotate = Gesture.Rotation()
     .onUpdate((e) => {
-      rotation.value = e.rotation;
+      rotation.value = lastRotation.value + e.rotation;
+    })
+    .onEnd(() => {
+      lastRotation.value = rotation.value;
     });
 
   // COMBINE GESTURES

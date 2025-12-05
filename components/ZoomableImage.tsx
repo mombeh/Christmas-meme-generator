@@ -1,11 +1,15 @@
 // components/ZoomableImage.tsx
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
+  useAnimatedStyle,
+  useSharedValue,
 } from "react-native-reanimated";
 
-export default function ZoomableImage({ source }) {
+interface ZoomableImageProps {
+  source: any; // or ImageSourcePropType if you want strict typing
+}
+
+export default function ZoomableImage({ source }: ZoomableImageProps) {
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -34,9 +38,12 @@ export default function ZoomableImage({ source }) {
   return (
     <GestureDetector gesture={composed}>
       <Animated.Image
-        source={source}
-        resizeMode="contain"
-        style={[{ width: "100%", height: 300 }, animatedStyle]}
+          source={source}
+        resizeMode="cover"   // ⭐ change to cover so it fills the card!
+        style={[
+          { width: "100%", height: "100%" }, // ⭐ remove fixed height
+          animatedStyle,
+        ]}
       />
     </GestureDetector>
   );

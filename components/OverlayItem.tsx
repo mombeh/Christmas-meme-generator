@@ -7,12 +7,28 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 
+interface OverlayItemProps {
+  source: any;
+  initialWidth?: number;
+  initialHeight?: number;
+  onDelete?: () => void;
+
+  // NEW
+  isSelected?: boolean;
+  onSelect?: () => void;
+  onDeselect?: () => void;
+}
+
 export default function OverlayItem({
   source,
   initialWidth = 100,
   initialHeight = 100,
-  onDelete, // ⭐ REQUIRED
-}) {
+  onDelete,
+  isSelected = false,
+  onSelect,
+  onDeselect,
+}: OverlayItemProps) {
+
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -23,11 +39,11 @@ export default function OverlayItem({
   const lastScale = useSharedValue(1);
   const lastRotation = useSharedValue(0);
 
-  const [showDelete, setShowDelete] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
-  // TAP → show delete button
+  // TAP → toggle controls
   const tap = Gesture.Tap().onEnd(() => {
-    runOnJS(setShowDelete)(true);
+    runOnJS(setShowControls)(s => !s);
   });
 
   // DRAG
@@ -41,7 +57,7 @@ export default function OverlayItem({
       lastY.value = translateY.value;
     });
 
-  // PINCH
+  // PINCH (Zoom)
   const pinch = Gesture.Pinch()
     .onUpdate((e) => {
       scale.value = lastScale.value * e.scale;
@@ -50,8 +66,8 @@ export default function OverlayItem({
       lastScale.value = scale.value;
     });
 
-  // ROTATION
-  const rotate = Gesture.Rotation()
+  // ROTATION gesture
+  const rotateGesture = Gesture.Rotation()
     .onUpdate((e) => {
       rotation.value = lastRotation.value + e.rotation;
     })
@@ -59,8 +75,20 @@ export default function OverlayItem({
       lastRotation.value = rotation.value;
     });
 
-  // COMBINE EVERYTHING
-  const composed = Gesture.Simultaneous(pan, pinch, rotate, tap);
+  // COMBINE
+  const composed = Gesture.Simultaneous(pan, pinch, rotateGesture, tap);
+
+  // Manual resize button action
+  const resizeManual = () => {
+    scale.value = scale.value + 0.15;
+    lastScale.value = scale.value;
+  };
+
+  // Manual rotate button action
+  const rotateManual = () => {
+    rotation.value = rotation.value + (15 * Math.PI) / 180; // rotate 15°
+    lastRotation.value = rotation.value;
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -74,13 +102,29 @@ export default function OverlayItem({
   return (
     <GestureDetector gesture={composed}>
       <Animated.View style={[styles.overlay, animatedStyle]}>
-        
-        {showDelete && (
+
+        {/* DELETE BUTTON */}
+        {showControls && (
           <TouchableOpacity style={styles.deleteBtn} onPress={onDelete}>
-            <Text style={{ color: "white", fontWeight: "bold" }}>X</Text>
+            <Text style={styles.iconText}>X</Text>
           </TouchableOpacity>
         )}
 
+        {/* ROTATE BUTTON */}
+        {showControls && (
+          <TouchableOpacity style={styles.rotateBtn} onPress={rotateManual}>
+            <Text style={styles.iconText}>⟳</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* RESIZE BUTTON */}
+        {showControls && (
+          <TouchableOpacity style={styles.resizeBtn} onPress={resizeManual}>
+            <Text style={styles.iconText}>↔</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* IMAGE */}
         <Image
           source={source}
           style={{ width: initialWidth, height: initialHeight }}
@@ -95,14 +139,47 @@ const styles = StyleSheet.create({
   overlay: {
     position: "absolute",
   },
+
+  iconText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+
   deleteBtn: {
     position: "absolute",
-    right: -12,
-    top: -12,
+    right: -20,
+    top: -20,
     backgroundColor: "red",
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+
+  rotateBtn: {
+    position: "absolute",
+    left: -20,
+    top: -20,
+    backgroundColor: "#1E90FF",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+
+  resizeBtn: {
+    position: "absolute",
+    right: -20,
+    bottom: -20,
+    backgroundColor: "#32CD32",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,

@@ -28,7 +28,6 @@ export default function OverlayItem({
   onSelect,
   onDeselect,
 }: OverlayItemProps) {
-
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -43,7 +42,7 @@ export default function OverlayItem({
 
   // TAP → toggle controls
   const tap = Gesture.Tap().onEnd(() => {
-    runOnJS(setShowControls)(s => !s);
+    runOnJS(setShowControls)((s) => !s);
   });
 
   // DRAG
@@ -90,6 +89,12 @@ export default function OverlayItem({
     lastRotation.value = rotation.value;
   };
 
+  // Manual reduce button action
+  const reduceManual = () => {
+    scale.value = Math.max(scale.value - 0.15, 0.3); // Prevent too small
+    lastScale.value = scale.value;
+  };
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
@@ -102,11 +107,10 @@ export default function OverlayItem({
   return (
     <GestureDetector gesture={composed}>
       <Animated.View style={[styles.overlay, animatedStyle]}>
-
         {/* DELETE BUTTON */}
         {showControls && (
           <TouchableOpacity style={styles.deleteBtn} onPress={onDelete}>
-            <Text style={styles.iconText}>X</Text>
+            <Text style={styles.iconText}>x</Text>
           </TouchableOpacity>
         )}
 
@@ -121,6 +125,13 @@ export default function OverlayItem({
         {showControls && (
           <TouchableOpacity style={styles.resizeBtn} onPress={resizeManual}>
             <Text style={styles.iconText}>↔</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* REDUCE SIZE */}
+        {showControls && (
+          <TouchableOpacity style={styles.reduceBtn} onPress={reduceManual}>
+            <Text style={styles.iconText}>↓</Text>
           </TouchableOpacity>
         )}
 
@@ -163,7 +174,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: -20,
     top: -20,
-    backgroundColor: "#1E90FF",
+    backgroundColor: "#d5d7d8ff",
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -176,7 +187,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: -20,
     bottom: -20,
-    backgroundColor: "#32CD32",
+    backgroundColor: "#d5d7d8ff",
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -184,4 +195,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1000,
   },
+
+  reduceBtn: {
+  position: "absolute",
+  left: -20,
+  bottom: -20,
+  backgroundColor: "#d5d7d8ff",
+  width: 30,
+  height: 30,
+  borderRadius: 15,
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+},
+
 });

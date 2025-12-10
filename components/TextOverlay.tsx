@@ -74,6 +74,11 @@ export default function TextOverlay({
       lastRotation.value = rotation.value;
     });
 
+  const rotateManual = () => {
+    rotation.value = rotation.value + (15 * Math.PI) / 180;
+    lastRotation.value = rotation.value;
+  };
+
   const composed = Gesture.Simultaneous(tap, pan, pinch, rotate);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -110,6 +115,14 @@ export default function TextOverlay({
               onPress={() => runOnJS(decreaseSize)()}
             >
               <Text style={styles.btnLabel}>−</Text>
+            </TouchableOpacity>
+
+            {/* Rotate */}
+            <TouchableOpacity
+              style={styles.rotate}
+              onPress={() => runOnJS(rotateManual)()}
+            >
+              <Text style={styles.btnLabel}>⟳</Text>
             </TouchableOpacity>
           </>
         )}
@@ -171,7 +184,7 @@ const styles = StyleSheet.create({
     right: -20,
     width: 22,
     height: 22,
-    backgroundColor: "#1E90FF",
+    backgroundColor: "#d5d7d8ff",
     borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
@@ -184,7 +197,20 @@ const styles = StyleSheet.create({
     left: -20,
     width: 22,
     height: 22,
-    backgroundColor: "#1E90FF",
+    backgroundColor: "#d5d7d8ff",
+    borderRadius: 11,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 500,
+  },
+
+  rotate: {
+    position: "absolute",
+    top: -20,
+    left: -20,
+    width: 22,
+    height: 22,
+    backgroundColor: "#d5d7d8ff",
     borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
